@@ -46,6 +46,7 @@ Viewer::Viewer(int argc, char** argv, const char* title) {
     glutMouseFunc(mouseCallback);
     glutMotionFunc(motionCallback);
     glutKeyboardFunc(keyboardCallbackInternal);
+    glutSpecialFunc(specialKeyCallback);
 
     // Initialize time
     struct timeval tv;
@@ -135,6 +136,20 @@ void Viewer::idleCallback() {
 }
 
 void Viewer::mouseCallback(int button, int state, int x, int y) {
+    // Mouse wheel support (button 3 = scroll up, button 4 = scroll down)
+    if (button == 3 && state == GLUT_DOWN) {
+        // Scroll up = zoom in
+        camera.distance -= 0.3f;
+        if (camera.distance < 0.5f) camera.distance = 0.5f;
+        return;
+    }
+    if (button == 4 && state == GLUT_DOWN) {
+        // Scroll down = zoom out
+        camera.distance += 0.3f;
+        if (camera.distance > 50.0f) camera.distance = 50.0f;
+        return;
+    }
+
     if (state == GLUT_DOWN) {
         mouseButton = button;
         mouseX = x;
@@ -176,10 +191,74 @@ void Viewer::keyboardCallbackInternal(unsigned char key, int x, int y) {
         case 27: // ESC
             exit(0);
             break;
+        // Zoom controls (trackpad-friendly)
+        case '+':
+        case '=':
+        case 'z':
+        case 'Z':
+            camera.distance -= 0.3f;
+            if (camera.distance < 0.5f) camera.distance = 0.5f;
+            break;
+        case '-':
+        case '_':
+        case 'x':
+        case 'X':
+            camera.distance += 0.3f;
+            if (camera.distance > 50.0f) camera.distance = 50.0f;
+            break;
+        // Pan controls (trackpad-friendly)
+        case 'i':
+        case 'I':
+            camera.target_y += 0.2f;
+            break;
+        case 'k':
+        case 'K':
+            camera.target_y -= 0.2f;
+            break;
+        case 'j':
+        case 'J':
+            camera.target_x -= 0.2f;
+            break;
+        case 'l':
+        case 'L':
+            camera.target_x += 0.2f;
+            break;
+        case 'u':
+        case 'U':
+            camera.target_z += 0.2f;
+            break;
+        case 'o':
+        case 'O':
+            camera.target_z -= 0.2f;
+            break;
         default:
             if (keyCallback) {
                 keyCallback(key, x, y);
             }
+            break;
+    }
+}
+
+void Viewer::specialKeyCallback(int key, int x, int y) {
+    // Arrow keys for camera pan (trackpad-friendly alternative)
+    switch (key) {
+        case GLUT_KEY_UP:
+            camera.target_y += 0.2f;
+            break;
+        case GLUT_KEY_DOWN:
+            camera.target_y -= 0.2f;
+            break;
+        case GLUT_KEY_LEFT:
+            camera.target_x -= 0.2f;
+            break;
+        case GLUT_KEY_RIGHT:
+            camera.target_x += 0.2f;
+            break;
+        case GLUT_KEY_PAGE_UP:
+            camera.target_z += 0.2f;
+            break;
+        case GLUT_KEY_PAGE_DOWN:
+            camera.target_z -= 0.2f;
             break;
     }
 }

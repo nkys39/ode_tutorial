@@ -76,6 +76,7 @@ private:
     static void mouseCallback(int button, int state, int x, int y);
     static void motionCallback(int x, int y);
     static void keyboardCallbackInternal(unsigned char key, int x, int y);
+    static void specialKeyCallback(int key, int x, int y);
 
     static std::function<void(double)> simCallback;
     static std::function<void()> drawCallback;
