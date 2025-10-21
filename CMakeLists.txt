@@ -13,6 +13,27 @@ find_package(GLUT REQUIRED)
 find_library(ODE_LIBRARY NAMES ode)
 find_path(ODE_INCLUDE_DIR ode/ode.h)
 
+# Find DrawStuff library (optional)
+find_library(DRAWSTUFF_LIBRARY NAMES drawstuff)
+if(DRAWSTUFF_LIBRARY)
+    message(STATUS "DrawStuff Library: ${DRAWSTUFF_LIBRARY}")
+    set(HAVE_DRAWSTUFF TRUE)
+    # Find drawstuff textures path
+    find_path(DRAWSTUFF_TEXTURES drawstuff/textures
+              PATHS /usr/share /usr/local/share
+              PATH_SUFFIXES ode)
+    if(DRAWSTUFF_TEXTURES)
+        set(DRAWSTUFF_TEXTURE_PATH "${DRAWSTUFF_TEXTURES}/drawstuff/textures")
+        add_definitions(-DDRAWSTUFF_TEXTURE_PATH="${DRAWSTUFF_TEXTURE_PATH}")
+    else()
+        message(WARNING "DrawStuff textures not found. Using default path.")
+        add_definitions(-DDRAWSTUFF_TEXTURE_PATH="/usr/share/ode/drawstuff/textures")
+    endif()
+else()
+    message(STATUS "DrawStuff library not found. DrawStuff tutorials will be skipped.")
+    set(HAVE_DRAWSTUFF FALSE)
+endif()
+
 if(NOT ODE_LIBRARY)
     message(FATAL_ERROR "ODE library not found. Please install libode-dev")
 endif()
@@ -70,6 +91,13 @@ add_subdirectory(22_dynamic_obstacle_avoidance)
 add_subdirectory(23_slam_basics)
 add_subdirectory(24_social_navigation)
 add_subdirectory(25_autonomous_navigation)
+
+# DrawStuff tutorials (optional)
+if(HAVE_DRAWSTUFF)
+    add_subdirectory(01_hello_world_drawstuff)
+    add_subdirectory(02_falling_sphere_drawstuff)
+    add_subdirectory(03_collision_detection_drawstuff)
+endif()
 
 # Print build information
 message(STATUS "")

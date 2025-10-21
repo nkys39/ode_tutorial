@@ -20,6 +20,7 @@ ODE（Open Dynamics Engine）は、オープンソースの高性能な3D剛体�
 - ODE ライブラリ（libode-dev）
 - OpenGL / GLUT（可視化用）
 - CMake（ビルドシステム）
+- DrawStuff（オプション - ODEに付属の可視化ライブラリ）
 
 ### Ubuntu/Debianの場合
 ```bash
@@ -36,6 +37,26 @@ brew install ode
 brew install freeglut
 brew install cmake
 ```
+
+## 可視化ライブラリについて
+
+このチュートリアルでは、2つの可視化方法を提供しています：
+
+### GLUT版（デフォルト）
+- チュートリアル01-25: GLUT/OpenGLベースの可視化
+- より柔軟なカスタマイズが可能
+- グリッド線などの詳細な描画が容易
+
+### DrawStuff版（オプション）
+- チュートリアル01-03のDrawStuffバージョン
+- ODEに付属している公式可視化ライブラリ
+- よりシンプルなAPI
+- ODEのドキュメントやサンプルで広く使われている
+
+DrawStuff版を試すには、以下のチュートリアルを実行してください：
+- `01_hello_world_drawstuff`
+- `02_falling_sphere_drawstuff`
+- `03_collision_detection_drawstuff`
 
 ## チュートリアル内容
 
