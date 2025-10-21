@@ -1,0 +1,2 @@
+add_executable(20_walking_pedestrian main.cpp)
+target_link_libraries(20_walking_pedestrian ode_common)

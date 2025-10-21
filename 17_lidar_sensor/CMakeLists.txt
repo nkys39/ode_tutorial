@@ -1,0 +1,2 @@
+add_executable(17_lidar_sensor main.cpp)
+target_link_libraries(17_lidar_sensor ode_common)

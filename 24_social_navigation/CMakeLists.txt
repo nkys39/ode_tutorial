@@ -1,0 +1,2 @@
+add_executable(24_social_navigation main.cpp)
+target_link_libraries(24_social_navigation ode_common)

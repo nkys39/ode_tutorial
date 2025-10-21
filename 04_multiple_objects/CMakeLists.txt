@@ -1,0 +1,2 @@
+add_executable(04_multiple_objects main.cpp)
+target_link_libraries(04_multiple_objects ode_common)

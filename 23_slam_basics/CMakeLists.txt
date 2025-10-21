@@ -1,0 +1,2 @@
+add_executable(23_slam_basics main.cpp)
+target_link_libraries(23_slam_basics ode_common)

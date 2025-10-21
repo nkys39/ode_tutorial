@@ -1,0 +1,2 @@
+add_executable(05_different_shapes main.cpp)
+target_link_libraries(05_different_shapes ode_common)

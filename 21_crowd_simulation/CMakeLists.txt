@@ -1,0 +1,2 @@
+add_executable(21_crowd_simulation main.cpp)
+target_link_libraries(21_crowd_simulation ode_common)

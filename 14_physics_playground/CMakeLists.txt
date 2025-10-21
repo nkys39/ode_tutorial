@@ -1,0 +1,2 @@
+add_executable(14_physics_playground main.cpp)
+target_link_libraries(14_physics_playground ode_common)

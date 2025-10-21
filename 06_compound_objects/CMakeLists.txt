@@ -1,0 +1,2 @@
+add_executable(06_compound_objects main.cpp)
+target_link_libraries(06_compound_objects ode_common)

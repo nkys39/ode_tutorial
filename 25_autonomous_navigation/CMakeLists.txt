@@ -1,0 +1,2 @@
+add_executable(25_autonomous_navigation main.cpp)
+target_link_libraries(25_autonomous_navigation ode_common)

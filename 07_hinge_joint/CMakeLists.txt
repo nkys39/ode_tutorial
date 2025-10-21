@@ -1,0 +1,2 @@
+add_executable(07_hinge_joint main.cpp)
+target_link_libraries(07_hinge_joint ode_common)

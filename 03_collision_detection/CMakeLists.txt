@@ -1,0 +1,2 @@
+add_executable(03_collision_detection main.cpp)
+target_link_libraries(03_collision_detection ode_common)

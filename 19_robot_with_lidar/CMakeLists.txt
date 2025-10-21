@@ -1,0 +1,2 @@
+add_executable(19_robot_with_lidar main.cpp)
+target_link_libraries(19_robot_with_lidar ode_common)

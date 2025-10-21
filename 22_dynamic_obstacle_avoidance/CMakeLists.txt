@@ -1,0 +1,2 @@
+add_executable(22_dynamic_obstacle_avoidance main.cpp)
+target_link_libraries(22_dynamic_obstacle_avoidance ode_common)

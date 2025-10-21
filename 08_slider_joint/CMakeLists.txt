@@ -1,0 +1,2 @@
+add_executable(08_slider_joint main.cpp)
+target_link_libraries(08_slider_joint ode_common)

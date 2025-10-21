@@ -1,0 +1,2 @@
+add_executable(18_camera_sensor main.cpp)
+target_link_libraries(18_camera_sensor ode_common)
