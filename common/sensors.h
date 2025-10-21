@@ -83,20 +83,31 @@ private:
     LidarScan scan_;
 };
 
-// Depth camera
-struct DepthImage {
+// RGB color structure
+struct Color {
+    float r, g, b;
+    Color(float r_ = 0.0f, float g_ = 0.0f, float b_ = 0.0f) : r(r_), g(g_), b(b_) {}
+};
+
+// RGB-D camera image
+struct RGBDImage {
     std::vector<std::vector<dReal>> depths;
+    std::vector<std::vector<Color>> colors;
     int width;
     int height;
     dReal h_fov;  // Horizontal field of view
     dReal v_fov;  // Vertical field of view
     dReal max_range;
 
-    DepthImage(int w = 64, int h = 48, dReal hfov = M_PI / 2, dReal vfov = M_PI / 3, dReal max_r = 10.0)
+    RGBDImage(int w = 64, int h = 48, dReal hfov = M_PI / 2, dReal vfov = M_PI / 3, dReal max_r = 10.0)
         : width(w), height(h), h_fov(hfov), v_fov(vfov), max_range(max_r) {
         depths.resize(height, std::vector<dReal>(width, max_range));
+        colors.resize(height, std::vector<Color>(width, Color(0.5f, 0.5f, 0.5f)));
     }
 };
+
+// For backward compatibility
+typedef RGBDImage DepthImage;
 
 // Simple depth camera
 class DepthCamera {
@@ -124,6 +135,7 @@ public:
                 dGeomRaySet(ray, position[0], position[1], position[2], dx, dy, dz);
 
                 dReal closest_distance = image_.max_range;
+                dGeomID closest_geom = nullptr;
                 int num_geoms = dSpaceGetNumGeoms(space_);
                 for (int j = 0; j < num_geoms; j++) {
                     dGeomID geom = dSpaceGetGeom(space_, j);
@@ -134,11 +146,27 @@ public:
                         dReal distance = contact[0].depth;
                         if (distance < closest_distance) {
                             closest_distance = distance;
+                            closest_geom = geom;
                         }
                     }
                 }
 
                 image_.depths[v][h] = closest_distance;
+
+                // Get color from geometry data
+                if (closest_geom != nullptr && closest_distance < image_.max_range) {
+                    Color* color = static_cast<Color*>(dGeomGetData(closest_geom));
+                    if (color != nullptr) {
+                        image_.colors[v][h] = *color;
+                    } else {
+                        // Default gray color if no color data
+                        image_.colors[v][h] = Color(0.7f, 0.7f, 0.7f);
+                    }
+                } else {
+                    // Sky/background color
+                    image_.colors[v][h] = Color(0.5f, 0.7f, 0.9f);
+                }
+
                 dGeomDestroy(ray);
             }
         }

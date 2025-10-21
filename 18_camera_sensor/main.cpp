@@ -14,15 +14,40 @@ dGeomID ground_geom;
 DepthCamera* camera;
 dReal camera_pos[3] = {0, -3, 1.5};
 
-std::vector<dBodyID> obstacles;
+struct ObstacleInfo {
+    dBodyID body;
+    dGeomID geom;
+    Color* color;
+};
+std::vector<ObstacleInfo> obstacles;
 
 // Store latest depth image for visualization
 DepthImage current_depth_image;
 
 void createObstacles() {
+    ObstacleInfo obs;
     dGeomID geom;
-    obstacles.push_back(createBox(world, space, 1, 0, 0.5, 1.0, 0.5, 1.0, 1.0, &geom));
-    obstacles.push_back(createSphere(world, space, -1, 1, 0.5, 0.5, 1.0, &geom));
+
+    // Red box
+    obs.body = createBox(world, space, 1, 0, 0.5, 1.0, 0.5, 1.0, 1.0, &geom);
+    obs.geom = geom;
+    obs.color = new Color(0.8f, 0.2f, 0.2f);
+    dGeomSetData(obs.geom, obs.color);
+    obstacles.push_back(obs);
+
+    // Green sphere
+    obs.body = createSphere(world, space, -1, 1, 0.5, 0.5, 1.0, &geom);
+    obs.geom = geom;
+    obs.color = new Color(0.2f, 0.8f, 0.2f);
+    dGeomSetData(obs.geom, obs.color);
+    obstacles.push_back(obs);
+
+    // Blue box
+    obs.body = createBox(world, space, 0, -1.5, 0.3, 0.6, 0.6, 0.6, 1.0, &geom);
+    obs.geom = geom;
+    obs.color = new Color(0.2f, 0.2f, 0.9f);
+    dGeomSetData(obs.geom, obs.color);
+    obstacles.push_back(obs);
 }
 
 void simulationStep(double dt) {
@@ -56,26 +81,62 @@ void drawCameraView() {
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
 
-    // Draw depth image in top-right corner
-    float view_width = 0.3f;
-    float view_height = 0.3f;
-    float view_x = 0.68f;
-    float view_y = 0.68f;
-
-    // Draw background
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glBegin(GL_QUADS);
-    glVertex2f(view_x, view_y);
-    glVertex2f(view_x + view_width, view_y);
-    glVertex2f(view_x + view_width, view_y + view_height);
-    glVertex2f(view_x, view_y + view_height);
-    glEnd();
-
-    // Draw depth pixels
     int width = current_depth_image.width;
     int height = current_depth_image.height;
-    float pixel_w = view_width / width;
-    float pixel_h = view_height / height;
+    float view_width = 0.35f;
+    float view_height = 0.35f;
+
+    // Draw RGB color view (larger, main view)
+    float rgb_x = 0.03f;
+    float rgb_y = 0.63f;
+    float rgb_w = view_width * 1.3f;
+    float rgb_h = view_height * 1.3f;
+
+    // Draw RGB pixels
+    float pixel_w = rgb_w / width;
+    float pixel_h = rgb_h / height;
+
+    glBegin(GL_QUADS);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            Color color = current_depth_image.colors[y][x];
+            glColor3f(color.r, color.g, color.b);
+
+            float px = rgb_x + x * pixel_w;
+            float py = rgb_y + y * pixel_h;
+
+            glVertex2f(px, py);
+            glVertex2f(px + pixel_w, py);
+            glVertex2f(px + pixel_w, py + pixel_h);
+            glVertex2f(px, py + pixel_h);
+        }
+    }
+    glEnd();
+
+    // Draw border for RGB view
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glLineWidth(2.0f);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(rgb_x, rgb_y);
+    glVertex2f(rgb_x + rgb_w, rgb_y);
+    glVertex2f(rgb_x + rgb_w, rgb_y + rgb_h);
+    glVertex2f(rgb_x, rgb_y + rgb_h);
+    glEnd();
+
+    // Draw label for RGB
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos2f(rgb_x + 0.01f, rgb_y + rgb_h - 0.03f);
+    const char* label_rgb = "Camera View (RGB)";
+    for (const char* c = label_rgb; *c != '\0'; c++) {
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
+    }
+
+    // Draw depth view (smaller, secondary view)
+    float depth_x = 0.68f;
+    float depth_y = 0.68f;
+
+    pixel_w = view_width / width;
+    pixel_h = view_height / height;
 
     glBegin(GL_QUADS);
     for (int y = 0; y < height; y++) {
@@ -91,8 +152,8 @@ void drawCameraView() {
 
             glColor3f(intensity, intensity, intensity);
 
-            float px = view_x + x * pixel_w;
-            float py = view_y + y * pixel_h;
+            float px = depth_x + x * pixel_w;
+            float py = depth_y + y * pixel_h;
 
             glVertex2f(px, py);
             glVertex2f(px + pixel_w, py);
@@ -102,21 +163,21 @@ void drawCameraView() {
     }
     glEnd();
 
-    // Draw border
+    // Draw border for depth view
     glColor3f(1.0f, 1.0f, 1.0f);
     glLineWidth(2.0f);
     glBegin(GL_LINE_LOOP);
-    glVertex2f(view_x, view_y);
-    glVertex2f(view_x + view_width, view_y);
-    glVertex2f(view_x + view_width, view_y + view_height);
-    glVertex2f(view_x, view_y + view_height);
+    glVertex2f(depth_x, depth_y);
+    glVertex2f(depth_x + view_width, depth_y);
+    glVertex2f(depth_x + view_width, depth_y + view_height);
+    glVertex2f(depth_x, depth_y + view_height);
     glEnd();
 
-    // Draw label
+    // Draw label for depth
     glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos2f(view_x + 0.01f, view_y + view_height - 0.03f);
-    const char* label = "Camera View (Depth)";
-    for (const char* c = label; *c != '\0'; c++) {
+    glRasterPos2f(depth_x + 0.01f, depth_y + view_height - 0.03f);
+    const char* label_depth = "Depth";
+    for (const char* c = label_depth; *c != '\0'; c++) {
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, *c);
     }
 
@@ -136,17 +197,21 @@ void drawScene() {
     Viewer::setColor(0.5f, 0.5f, 0.5f);
     Viewer::drawPlane(plane, plane[3], 10.0);
     
-    for (size_t i = 0; i < obstacles.size(); i++) {
-        const dReal* pos = dBodyGetPosition(obstacles[i]);
-        const dReal* R = dBodyGetRotation(obstacles[i]);
-        
-        if (i == 0) {
-            dReal sides[3] = {1.0, 0.5, 1.0};
-            Viewer::setColor(0.7f, 0.3f, 0.3f);
+    for (const auto& obs : obstacles) {
+        const dReal* pos = dBodyGetPosition(obs.body);
+        const dReal* R = dBodyGetRotation(obs.body);
+
+        // Use the stored color
+        Viewer::setColor(obs.color->r, obs.color->g, obs.color->b);
+
+        int geom_class = dGeomGetClass(obs.geom);
+        if (geom_class == dBoxClass) {
+            dVector3 sides;
+            dGeomBoxGetLengths(obs.geom, sides);
             Viewer::drawBox(pos, R, sides);
-        } else {
-            Viewer::setColor(0.3f, 0.7f, 0.3f);
-            Viewer::drawSphere(pos, R, 0.5);
+        } else if (geom_class == dSphereClass) {
+            dReal radius = dGeomSphereGetRadius(obs.geom);
+            Viewer::drawSphere(pos, R, radius);
         }
     }
     
@@ -206,7 +271,10 @@ int main(int argc, char** argv) {
     viewer.start();
     
     delete camera;
-    for (auto obs : obstacles) dBodyDestroy(obs);
+    for (auto& obs : obstacles) {
+        delete obs.color;
+        dBodyDestroy(obs.body);
+    }
     dSpaceDestroy(space);
     dWorldDestroy(world);
     dCloseODE();
