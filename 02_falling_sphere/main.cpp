@@ -62,9 +62,7 @@ int main(int argc, char** argv) {
     space = dHashSpaceCreate(0);
 
     // Create sphere
-    sphere = createSphere(world, space, 0, 0, 3.0, 0.2, 1.0);
-
-    sphere_geom = dBodyGetFirstGeom(sphere);
+    sphere = createSphere(world, space, 0, 0, 3.0, 0.2, 1.0, &sphere_geom);
 
     // Create viewer
     Viewer viewer(argc, argv, "02: Falling Sphere - ODE Tutorial");

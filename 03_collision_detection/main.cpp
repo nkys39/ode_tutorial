@@ -8,8 +8,10 @@ using namespace ode_tutorial;
 dWorldID world;
 dSpaceID space;
 dBodyID sphere;
+dGeomID sphere_geom;
 dGeomID ground_geom;
 dJointGroupID contact_group;
+const dReal SPHERE_RADIUS = 0.2;
 
 // Collision callback
 void nearCallback(void* data, dGeomID o1, dGeomID o2) {
@@ -68,11 +70,9 @@ void drawScene() {
     // Draw sphere
     const dReal* pos = dBodyGetPosition(sphere);
     const dReal* R = dBodyGetRotation(sphere);
-    dGeomID geom = dBodyGetFirstGeom(sphere);
-    dReal radius = dGeomSphereGetRadius(geom);
 
     Viewer::setColor(0.9f, 0.3f, 0.3f);
-    Viewer::drawSphere(pos, R, radius);
+    Viewer::drawSphere(pos, R, SPHERE_RADIUS);
 }
 
 int main(int argc, char** argv) {
@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
     ground_geom = dCreatePlane(space, 0, 0, 1, 0);
 
     // Create sphere
-    sphere = createSphere(world, space, 0, 0, 3.0, 0.2, 1.0);
+    sphere = createSphere(world, space, 0, 0, 3.0, SPHERE_RADIUS, 1.0, &sphere_geom);
 
     // Create viewer
     Viewer viewer(argc, argv, "03: Collision Detection - ODE Tutorial");

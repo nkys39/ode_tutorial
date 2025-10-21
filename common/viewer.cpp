@@ -382,13 +382,10 @@ void Viewer::drawGeometry(dGeomID geom) {
 }
 
 void Viewer::drawBody(dBodyID body) {
+    // This function is deprecated - use drawGeometry directly with geom IDs
+    // ODE doesn't provide dBodyGetFirstGeom/dBodyGetNextGeom APIs
+    // Instead, keep track of geom IDs in your application
     if (!body) return;
-
-    dGeomID geom = dBodyGetFirstGeom(body);
-    while (geom) {
-        drawGeometry(geom);
-        geom = dBodyGetNextGeom(geom);
-    }
 }
 
 void Viewer::pause() {

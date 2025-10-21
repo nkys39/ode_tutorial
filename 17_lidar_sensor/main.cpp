@@ -11,7 +11,12 @@ dSpaceID space;
 dGeomID ground_geom;
 
 // Obstacles
-std::vector<dBodyID> obstacles;
+struct Obstacle {
+    dBodyID body;
+    dGeomID geom;
+    dReal lx, ly, lz;
+};
+std::vector<Obstacle> obstacles;
 
 // LiDAR sensor
 LidarSensor* lidar;
@@ -20,10 +25,23 @@ dReal sensor_yaw = 0.0;
 
 void createObstacles() {
     // Create some boxes as obstacles
-    obstacles.push_back(createBox(world, space, 2, 0, 0.25, 0.5, 0.5, 0.5, 1.0));
-    obstacles.push_back(createBox(world, space, -1, 1.5, 0.25, 0.3, 0.3, 0.5, 1.0));
-    obstacles.push_back(createBox(world, space, -1, -1.5, 0.25, 0.4, 0.4, 0.5, 1.0));
-    obstacles.push_back(createBox(world, space, 0, 2.5, 0.3, 0.6, 0.2, 0.6, 1.0));
+    Obstacle obs;
+
+    obs.lx = 0.5; obs.ly = 0.5; obs.lz = 0.5;
+    obs.body = createBox(world, space, 2, 0, 0.25, obs.lx, obs.ly, obs.lz, 1.0, &obs.geom);
+    obstacles.push_back(obs);
+
+    obs.lx = 0.3; obs.ly = 0.3; obs.lz = 0.5;
+    obs.body = createBox(world, space, -1, 1.5, 0.25, obs.lx, obs.ly, obs.lz, 1.0, &obs.geom);
+    obstacles.push_back(obs);
+
+    obs.lx = 0.4; obs.ly = 0.4; obs.lz = 0.5;
+    obs.body = createBox(world, space, -1, -1.5, 0.25, obs.lx, obs.ly, obs.lz, 1.0, &obs.geom);
+    obstacles.push_back(obs);
+
+    obs.lx = 0.6; obs.ly = 0.2; obs.lz = 0.6;
+    obs.body = createBox(world, space, 0, 2.5, 0.3, obs.lx, obs.ly, obs.lz, 1.0, &obs.geom);
+    obstacles.push_back(obs);
 }
 
 void simulationStep(double dt) {
@@ -54,12 +72,10 @@ void drawScene() {
     Viewer::drawPlane(plane, plane[3], 10.0);
 
     // Draw obstacles
-    for (auto obs : obstacles) {
-        const dReal* pos = dBodyGetPosition(obs);
-        const dReal* R = dBodyGetRotation(obs);
-        dGeomID geom = dBodyGetFirstGeom(obs);
-        dVector3 sides;
-        dGeomBoxGetLengths(geom, sides);
+    for (const auto& obs : obstacles) {
+        const dReal* pos = dBodyGetPosition(obs.body);
+        const dReal* R = dBodyGetRotation(obs.body);
+        dReal sides[3] = {obs.lx, obs.ly, obs.lz};
 
         Viewer::setColor(0.7f, 0.3f, 0.3f);
         Viewer::drawBox(pos, R, sides);
@@ -126,8 +142,8 @@ int main(int argc, char** argv) {
 
     // Cleanup
     delete lidar;
-    for (auto obs : obstacles) {
-        dBodyDestroy(obs);
+    for (auto& obs : obstacles) {
+        dBodyDestroy(obs.body);
     }
     dSpaceDestroy(space);
     dWorldDestroy(world);

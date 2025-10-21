@@ -76,7 +76,7 @@ inline dReal getYawFromRotation(const dReal* R) {
 inline dBodyID createBox(dWorldID world, dSpaceID space,
                          dReal x, dReal y, dReal z,
                          dReal lx, dReal ly, dReal lz,
-                         dReal mass) {
+                         dReal mass, dGeomID* out_geom = nullptr) {
     dBodyID body = dBodyCreate(world);
     dBodySetPosition(body, x, y, z);
 
@@ -88,13 +88,14 @@ inline dBodyID createBox(dWorldID world, dSpaceID space,
     dGeomID geom = dCreateBox(space, lx, ly, lz);
     dGeomSetBody(geom, body);
 
+    if (out_geom) *out_geom = geom;
     return body;
 }
 
 inline dBodyID createSphere(dWorldID world, dSpaceID space,
                             dReal x, dReal y, dReal z,
                             dReal radius,
-                            dReal mass) {
+                            dReal mass, dGeomID* out_geom = nullptr) {
     dBodyID body = dBodyCreate(world);
     dBodySetPosition(body, x, y, z);
 
@@ -106,13 +107,14 @@ inline dBodyID createSphere(dWorldID world, dSpaceID space,
     dGeomID geom = dCreateSphere(space, radius);
     dGeomSetBody(geom, body);
 
+    if (out_geom) *out_geom = geom;
     return body;
 }
 
 inline dBodyID createCapsule(dWorldID world, dSpaceID space,
                              dReal x, dReal y, dReal z,
                              dReal radius, dReal length,
-                             dReal mass) {
+                             dReal mass, dGeomID* out_geom = nullptr) {
     dBodyID body = dBodyCreate(world);
     dBodySetPosition(body, x, y, z);
 
@@ -124,6 +126,26 @@ inline dBodyID createCapsule(dWorldID world, dSpaceID space,
     dGeomID geom = dCreateCapsule(space, radius, length);
     dGeomSetBody(geom, body);
 
+    if (out_geom) *out_geom = geom;
+    return body;
+}
+
+inline dBodyID createCylinder(dWorldID world, dSpaceID space,
+                              dReal x, dReal y, dReal z,
+                              dReal radius, dReal length,
+                              dReal mass, dGeomID* out_geom = nullptr) {
+    dBodyID body = dBodyCreate(world);
+    dBodySetPosition(body, x, y, z);
+
+    dMass m;
+    dMassSetCylinder(&m, 1, 3, radius, length);
+    dMassAdjust(&m, mass);
+    dBodySetMass(body, &m);
+
+    dGeomID geom = dCreateCylinder(space, radius, length);
+    dGeomSetBody(geom, body);
+
+    if (out_geom) *out_geom = geom;
     return body;
 }
 
