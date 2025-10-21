@@ -69,17 +69,24 @@ brew install cmake
 - **17_lidar_sensor**: LiDARセンサのシミュレーション（レイキャスティング）
 - **18_camera_sensor**: カメラセンサのシミュレーション（深度カメラ含む）
 - **19_robot_with_lidar**: 差動2輪ロボット + LiDARセンサの統合
-- **20_slam_basics**: SLAM（自己位置推定と地図作成）の基礎
-- **21_obstacle_avoidance**: LiDARを使った障害物回避
-- **22_autonomous_navigation**: 自律ナビゲーションシステム
+- **20_walking_pedestrian**: 歩行する人のシミュレーション（移動障害物）
+- **21_crowd_simulation**: 複数の歩行者のシミュレーション（人群）
+- **22_dynamic_obstacle_avoidance**: 動的障害物（歩行者）を避けるロボット制御
+- **23_slam_basics**: SLAM（自己位置推定と地図作成）の基礎
+- **24_social_navigation**: 人混みの中でのソーシャルナビゲーション
+- **25_autonomous_navigation**: 動的環境での自律ナビゲーションシステム
 
 #### ロボティクス編で学べること
 - **差動2輪ロボット**: 左右の車輪速度を制御して移動・旋回する基本的なロボット
 - **オドメトリ**: 車輪の回転から位置・姿勢を推定する技術（累積誤差の影響も体験）
 - **LiDARセンサ**: レーザーレイキャスティングによる距離測定と環境マップ作成
 - **カメラセンサ**: RGB画像と深度情報の取得
+- **歩行者シミュレーション**: カプセルやラグドールベースの移動障害物
+- **人群シミュレーション**: Social Force Modelなどを使った複数歩行者の動き
+- **動的障害物回避**: 移動する障害物を予測して回避する制御アルゴリズム
+- **ソーシャルナビゲーション**: 人に配慮した自然な経路計画と動作
 - **センサ融合**: 複数センサを組み合わせた高度なロボットシステム
-- **自律制御**: センサ情報を使った障害物回避と経路計画
+- **動的環境での自律制御**: 静的・動的障害物が混在する環境でのナビゲーション
 
 ## プロジェクト構成
 
@@ -92,7 +99,8 @@ ode_tutorial/
 │   ├── viewer.cpp
 │   ├── utils.h            # 共通ユーティリティ関数
 │   ├── sensors.h          # センサーシミュレーション
-│   └── robot_utils.h      # ロボット関連ユーティリティ
+│   ├── robot_utils.h      # ロボット関連ユーティリティ
+│   └── pedestrian.h       # 歩行者シミュレーション
 ├── 01_hello_world/
 │   ├── main.cpp
 │   └── README.md
@@ -109,6 +117,12 @@ ode_tutorial/
 ├── 19_robot_with_lidar/
 │   ├── main.cpp
 │   └── README.md
+├── 20_walking_pedestrian/
+│   ├── main.cpp
+│   └── README.md
+├── 22_dynamic_obstacle_avoidance/
+│   ├── main.cpp
+│   └── README.md
 ...
 └── docs/                   # ドキュメント
     ├── ode_basics.md      # ODE基礎知識
@@ -116,7 +130,9 @@ ode_tutorial/
     ├── joints.md          # ジョイントの詳細
     ├── robotics.md        # ロボティクス応用
     ├── sensors.md         # センサーシミュレーション
-    └── odometry.md        # オドメトリの理論と実装
+    ├── odometry.md        # オドメトリの理論と実装
+    ├── pedestrian.md      # 歩行者シミュレーション
+    └── dynamic_obstacles.md  # 動的障害物回避の理論
 ```
 
 ## ビルド方法
@@ -168,6 +184,9 @@ cd build
 - オドメトリの理論と誤差解析
 - LiDARセンサの原理とレイキャスティング
 - SLAM（Simultaneous Localization and Mapping）の基礎
+- 歩行者シミュレーション（Social Force Model）
+- 動的障害物回避（Dynamic Window Approach, Velocity Obstacles）
+- ソーシャルナビゲーション（人に配慮したロボット行動）
 - ROS（Robot Operating System）との連携可能性
 
 ## トラブルシューティング
