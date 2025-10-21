@@ -264,11 +264,70 @@ void Viewer::drawPlane(const dReal* normal, dReal distance, dReal size) {
     glDisable(GL_LIGHTING);
     glColor3f(0.6f, 0.6f, 0.6f);
 
-    glBegin(GL_QUADS);
-    glVertex3d(-size, -size, 0);
-    glVertex3d(size, -size, 0);
-    glVertex3d(size, size, 0);
-    glVertex3d(-size, size, 0);
+    // Calculate a point on the plane
+    dReal point[3];
+    point[0] = normal[0] * distance;
+    point[1] = normal[1] * distance;
+    point[2] = normal[2] * distance;
+
+    // Create two perpendicular vectors to the normal for drawing the plane
+    dReal v1[3], v2[3];
+
+    // Find a vector not parallel to normal
+    if (std::abs(normal[0]) < 0.9) {
+        v1[0] = 1; v1[1] = 0; v1[2] = 0;
+    } else {
+        v1[0] = 0; v1[1] = 1; v1[2] = 0;
+    }
+
+    // v2 = normal × v1
+    v2[0] = normal[1] * v1[2] - normal[2] * v1[1];
+    v2[1] = normal[2] * v1[0] - normal[0] * v1[2];
+    v2[2] = normal[0] * v1[1] - normal[1] * v1[0];
+
+    // Normalize v2
+    dReal len = std::sqrt(v2[0]*v2[0] + v2[1]*v2[1] + v2[2]*v2[2]);
+    v2[0] /= len; v2[1] /= len; v2[2] /= len;
+
+    // v1 = v2 × normal
+    v1[0] = v2[1] * normal[2] - v2[2] * normal[1];
+    v1[1] = v2[2] * normal[0] - v2[0] * normal[2];
+    v1[2] = v2[0] * normal[1] - v2[1] * normal[0];
+
+    // Draw grid pattern for better visibility
+    glBegin(GL_LINES);
+    int divisions = 20;
+    for (int i = -divisions; i <= divisions; i++) {
+        dReal t = i * size / divisions;
+
+        // Lines in v1 direction
+        dReal start1[3] = {
+            point[0] + t * v2[0] - size * v1[0],
+            point[1] + t * v2[1] - size * v1[1],
+            point[2] + t * v2[2] - size * v1[2]
+        };
+        dReal end1[3] = {
+            point[0] + t * v2[0] + size * v1[0],
+            point[1] + t * v2[1] + size * v1[1],
+            point[2] + t * v2[2] + size * v1[2]
+        };
+        glVertex3d(start1[0], start1[1], start1[2]);
+        glVertex3d(end1[0], end1[1], end1[2]);
+
+        // Lines in v2 direction
+        dReal start2[3] = {
+            point[0] + t * v1[0] - size * v2[0],
+            point[1] + t * v1[1] - size * v2[1],
+            point[2] + t * v1[2] - size * v2[2]
+        };
+        dReal end2[3] = {
+            point[0] + t * v1[0] + size * v2[0],
+            point[1] + t * v1[1] + size * v2[1],
+            point[2] + t * v1[2] + size * v2[2]
+        };
+        glVertex3d(start2[0], start2[1], start2[2]);
+        glVertex3d(end2[0], end2[1], end2[2]);
+    }
     glEnd();
 
     glEnable(GL_LIGHTING);
