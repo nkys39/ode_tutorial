@@ -3,6 +3,7 @@
 #include "sensors.h"
 #include "robot_utils.h"
 #include <iostream>
+#include <vector>
 #include <map>
 #include <cmath>
 

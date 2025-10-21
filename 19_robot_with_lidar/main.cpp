@@ -3,6 +3,7 @@
 #include "robot_utils.h"
 #include "sensors.h"
 #include <iostream>
+#include <vector>
 
 using namespace ode_tutorial;
 
