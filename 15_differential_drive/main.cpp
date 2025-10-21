@@ -59,13 +59,15 @@ void nearCallback(void* data, dGeomID o1, dGeomID o2) {
 }
 
 void createRobot(dReal x, dReal y, dReal z) {
-    // Create robot body
+    // Create robot body (z is body center height)
     robot_body = createBox(world, space, x, y, z,
                           BODY_LENGTH, BODY_WIDTH, BODY_HEIGHT, 5.0);
 
     // Create left wheel (cylinder, rotated 90 degrees around X axis)
+    // Wheel center is at body bottom level
+    dReal wheel_center_z = z - BODY_HEIGHT / 2;
     left_wheel = createCylinder(world, space,
-                               x - WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2,
+                               x - WHEEL_BASE / 2, y, wheel_center_z,
                                WHEEL_RADIUS, WHEEL_WIDTH, 0.5);
     dMatrix3 R;
     dRFromAxisAndAngle(R, 1, 0, 0, M_PI / 2);
@@ -73,30 +75,31 @@ void createRobot(dReal x, dReal y, dReal z) {
 
     // Create right wheel (cylinder, rotated 90 degrees around X axis)
     right_wheel = createCylinder(world, space,
-                                x + WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2,
+                                x + WHEEL_BASE / 2, y, wheel_center_z,
                                 WHEEL_RADIUS, WHEEL_WIDTH, 0.5);
     dBodySetRotation(right_wheel, R);
 
     // Create hinge joints for drive wheels
     left_hinge = dJointCreateHinge(world, 0);
     dJointAttach(left_hinge, robot_body, left_wheel);
-    dJointSetHingeAnchor(left_hinge, x - WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2);
+    dJointSetHingeAnchor(left_hinge, x - WHEEL_BASE / 2, y, wheel_center_z);
     dJointSetHingeAxis(left_hinge, 1, 0, 0);
 
     right_hinge = dJointCreateHinge(world, 0);
     dJointAttach(right_hinge, robot_body, right_wheel);
-    dJointSetHingeAnchor(right_hinge, x + WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2);
+    dJointSetHingeAnchor(right_hinge, x + WHEEL_BASE / 2, y, wheel_center_z);
     dJointSetHingeAxis(right_hinge, 1, 0, 0);
 
     // Create front caster (sphere, low friction, free to rotate)
-    dReal caster_z = z - BODY_HEIGHT / 2 - WHEEL_RADIUS + CASTER_RADIUS;
+    // Caster at same ground contact height as wheels
+    dReal caster_center_z = CASTER_RADIUS;
     front_caster = createSphere(world, space,
-                               x, y + BODY_WIDTH / 2 + CASTER_RADIUS / 2, caster_z,
+                               x, y + BODY_WIDTH / 2 + CASTER_RADIUS / 2, caster_center_z,
                                CASTER_RADIUS, 0.1);
 
     // Create rear caster (sphere, low friction, free to rotate)
     rear_caster = createSphere(world, space,
-                              x, y - BODY_WIDTH / 2 - CASTER_RADIUS / 2, caster_z,
+                              x, y - BODY_WIDTH / 2 - CASTER_RADIUS / 2, caster_center_z,
                               CASTER_RADIUS, 0.1);
 
     // Attach casters with ball joints (allows free rotation)
@@ -115,7 +118,9 @@ void createRobot(dReal x, dReal y, dReal z) {
 }
 
 void reset() {
-    dBodySetPosition(robot_body, 0, 0, 0.2);
+    // Correct height: wheel radius + half body height
+    dReal correct_height = WHEEL_RADIUS + BODY_HEIGHT / 2;
+    dBodySetPosition(robot_body, 0, 0, correct_height);
     dBodySetLinearVel(robot_body, 0, 0, 0);
     dBodySetAngularVel(robot_body, 0, 0, 0);
 
@@ -151,13 +156,12 @@ void simulationStep(double dt) {
     // Clear contacts
     dJointGroupEmpty(contact_group);
 
-    // Print robot position
-    const dReal* pos = dBodyGetPosition(robot_body);
-    const dReal* R = dBodyGetRotation(robot_body);
-    dReal yaw = getYawFromRotation(R);
-
+    // Print robot position (less frequently to avoid log spam)
     static int counter = 0;
-    if (counter++ % 100 == 0) {
+    if (counter++ % 500 == 0) {  // Every 500 frames instead of 100
+        const dReal* pos = dBodyGetPosition(robot_body);
+        const dReal* R = dBodyGetRotation(robot_body);
+        dReal yaw = getYawFromRotation(R);
         std::cout << "Robot pos: (" << pos[0] << ", " << pos[1]
                   << "), yaw: " << radToDeg(yaw) << "°" << std::endl;
     }
@@ -259,8 +263,9 @@ int main(int argc, char** argv) {
     // Create ground
     ground_geom = dCreatePlane(space, 0, 0, 1, 0);
 
-    // Create robot
-    createRobot(0, 0, 0.2);
+    // Create robot at correct height (wheel radius + half body height)
+    dReal robot_height = WHEEL_RADIUS + BODY_HEIGHT / 2;
+    createRobot(0, 0, robot_height);
 
     // Create viewer
     Viewer viewer(argc, argv, "15: Differential Drive Robot - ODE Tutorial");

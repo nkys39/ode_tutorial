@@ -1,0 +1,28 @@
+====================================
+  16: Odometry
+  Keyboard Controls
+====================================
+
+Movement:
+  W  - Move forward
+  S  - Move backward
+  A  - Turn left
+  D  - Turn right
+  X  - Stop
+
+View:
+  R  - Reset robot position
+  Q  - Quit
+
+Features:
+- Odometry estimates robot position from wheel encoders
+- Green path shows estimated position (odometry)
+- Blue path shows actual position (ground truth)
+- Observe how odometry drifts over time
+
+Tips:
+- Drive in circles or figure-8 patterns to see odometry drift
+- The longer you drive, the more error accumulates
+- This demonstrates why robots need sensor fusion (LiDAR, cameras, etc.)
+
+====================================

@@ -88,36 +88,41 @@ void createObstacles() {
 }
 
 void createRobot(dReal x, dReal y, dReal z) {
+    // Create robot body (z is body center height)
     robot_body = createBox(world, space, x, y, z,
                           BODY_LENGTH, BODY_WIDTH, BODY_HEIGHT, 5.0);
 
+    // Create wheels at body bottom level
+    dReal wheel_center_z = z - BODY_HEIGHT / 2;
     left_wheel = createCylinder(world, space,
-                               x - WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2,
+                               x - WHEEL_BASE / 2, y, wheel_center_z,
                                WHEEL_RADIUS, WHEEL_WIDTH, 0.5);
     dMatrix3 R;
     dRFromAxisAndAngle(R, 1, 0, 0, M_PI / 2);
     dBodySetRotation(left_wheel, R);
 
     right_wheel = createCylinder(world, space,
-                                x + WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2,
+                                x + WHEEL_BASE / 2, y, wheel_center_z,
                                 WHEEL_RADIUS, WHEEL_WIDTH, 0.5);
     dBodySetRotation(right_wheel, R);
 
     left_hinge = dJointCreateHinge(world, 0);
     dJointAttach(left_hinge, robot_body, left_wheel);
-    dJointSetHingeAnchor(left_hinge, x - WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2);
+    dJointSetHingeAnchor(left_hinge, x - WHEEL_BASE / 2, y, wheel_center_z);
     dJointSetHingeAxis(left_hinge, 1, 0, 0);
 
     right_hinge = dJointCreateHinge(world, 0);
     dJointAttach(right_hinge, robot_body, right_wheel);
-    dJointSetHingeAnchor(right_hinge, x + WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2);
+    dJointSetHingeAnchor(right_hinge, x + WHEEL_BASE / 2, y, wheel_center_z);
     dJointSetHingeAxis(right_hinge, 1, 0, 0);
 
     diff_drive = new DifferentialDrive(WHEEL_BASE, WHEEL_RADIUS);
 }
 
 void reset() {
-    dBodySetPosition(robot_body, 0, 0, 0.2);
+    // Correct height: wheel radius + half body height
+    dReal correct_height = WHEEL_RADIUS + BODY_HEIGHT / 2;
+    dBodySetPosition(robot_body, 0, 0, correct_height);
     dBodySetLinearVel(robot_body, 0, 0, 0);
     dBodySetAngularVel(robot_body, 0, 0, 0);
 
@@ -292,8 +297,9 @@ int main(int argc, char** argv) {
     // Create obstacles
     createObstacles();
 
-    // Create robot
-    createRobot(0, 0, 0.2);
+    // Create robot at correct height (wheel radius + half body height)
+    dReal robot_height = WHEEL_RADIUS + BODY_HEIGHT / 2;
+    createRobot(0, 0, robot_height);
 
     // Create LiDAR sensor
     lidar = new LidarSensor(space, -M_PI, M_PI, 360, 5.0, 0.1);

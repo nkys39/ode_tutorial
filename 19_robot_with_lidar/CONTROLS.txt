@@ -1,0 +1,28 @@
+====================================
+  19: Robot with LiDAR
+  Keyboard Controls
+====================================
+
+Movement (with automatic obstacle avoidance):
+  W  - Move forward (auto-avoids obstacles)
+  S  - Move backward
+  A  - Turn left
+  D  - Turn right
+  X  - Stop
+
+View:
+  R  - Reset robot position
+  Q  - Quit
+
+Features:
+- LiDAR sensor scans 360 degrees around robot
+- Automatic obstacle avoidance when moving forward
+- Green lines show LiDAR beams
+- Red boxes are obstacles detected by LiDAR
+
+Tips:
+- Press W to move forward - robot will avoid obstacles automatically
+- Robot slows down and turns when obstacles are detected ahead
+- Use A/D to manually navigate around obstacles
+
+====================================

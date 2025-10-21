@@ -1,0 +1,31 @@
+====================================
+  18: RGB-D Camera Sensor
+  Keyboard Controls
+====================================
+
+RGB Resolution Control:
+  1  - VGA resolution (640×480)
+  2  - HD resolution (1280×720)
+  3  - Full HD resolution (1920×1080)
+  H  - Show help
+
+View:
+  Q  - Quit
+
+Display:
+- Large RGB view (left, upper): High-resolution color camera
+- Small depth view (right, upper): Low-resolution depth sensor
+- 3D scene (main): Overview with camera frustum visualization
+
+Features:
+- Real-time resolution switching
+- OpenGL FBO rendering for efficient RGB capture
+- Raycast-based depth sensing
+- Dual display showing both RGB and depth data
+
+Technical Details:
+- RGB: GPU-accelerated, high-resolution (up to 1920×1080)
+- Depth: Raycast-based, fixed 64×48 resolution
+- Performance: High-res RGB has minimal overhead vs. low-res
+
+====================================

@@ -1,0 +1,23 @@
+====================================
+  15: Differential Drive Robot
+  Keyboard Controls
+====================================
+
+Movement:
+  W  - Move forward
+  S  - Move backward
+  A  - Turn left
+  D  - Turn right
+  X  - Stop
+
+View:
+  R  - Reset robot position
+  Q  - Quit
+
+Tips:
+- The robot uses differential drive (independent left/right wheel control)
+- Drive wheels (cylinders) provide traction with high friction
+- Caster wheels (spheres) provide stability with low friction
+- Use W/S for straight movement, A/D for turning
+
+====================================

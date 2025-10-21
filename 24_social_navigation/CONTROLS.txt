@@ -1,0 +1,38 @@
+====================================
+  24: Social Navigation
+  Keyboard Controls
+====================================
+
+Mode Control:
+  M  - Toggle between Manual and Auto navigation mode
+
+Manual Mode Controls:
+  W  - Move forward
+  S  - Move backward
+  A  - Turn left
+  D  - Turn right
+  X  - Stop
+
+View:
+  R  - Reset simulation
+  Q  - Quit
+
+Features:
+- Social Force Model for pedestrian simulation
+- Socially-aware robot navigation
+- Personal space and comfort distance modeling
+- Dynamic path planning around people
+
+Display:
+- Green robot: Autonomous mobile robot
+- Red spheres: Pedestrians walking with social forces
+- Blue sphere: Navigation goal
+- Arrows: Force vectors (social forces)
+
+Tips:
+- Press M to enable Auto mode and watch socially-aware navigation
+- Robot maintains comfortable distance from pedestrians
+- Observe how robot navigates differently than pure obstacle avoidance
+- In Manual mode, use WASD to control robot directly
+
+====================================

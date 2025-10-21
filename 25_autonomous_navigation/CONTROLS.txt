@@ -1,0 +1,42 @@
+====================================
+  25: Autonomous Navigation
+  Keyboard Controls
+====================================
+
+Mode Control:
+  M  - Toggle between Manual and Auto navigation mode
+  G  - Set new random goal position
+
+Manual Mode Controls:
+  W  - Move forward
+  S  - Move backward
+  A  - Turn left
+  D  - Turn right
+  X  - Stop
+
+View:
+  R  - Reset simulation
+  Q  - Quit
+
+Features:
+- Full autonomous navigation system
+- Path planning with obstacle avoidance
+- Dynamic replanning when obstacles detected
+- Integration of LiDAR sensing and motion control
+
+Display:
+- Green robot: Autonomous mobile robot with LiDAR
+- Static obstacles: Environment boundaries
+- Dynamic obstacles: Moving pedestrians
+- Blue sphere: Current navigation goal
+- Green lines: LiDAR scan beams
+- Cyan path: Planned trajectory
+
+Tips:
+- Press M to enable Auto mode and watch autonomous navigation
+- Press G to set a new random goal
+- Robot plans path, avoids obstacles, and reaches goal
+- This integrates all previous tutorials: sensing, planning, control
+- In Manual mode, use WASD for direct control
+
+====================================

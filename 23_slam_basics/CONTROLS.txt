@@ -1,0 +1,35 @@
+====================================
+  23: SLAM Basics
+  Keyboard Controls
+====================================
+
+Movement:
+  W  - Move forward
+  S  - Move backward
+  A  - Turn left
+  D  - Turn right
+  X  - Stop
+
+View:
+  R  - Reset simulation
+  Q  - Quit
+
+Features:
+- Simultaneous Localization and Mapping (SLAM)
+- LiDAR-based environment mapping
+- Real-time landmark detection and tracking
+- Particle filter for localization
+
+Display:
+- Green robot: Estimated pose
+- White dots: Detected landmarks (obstacles)
+- Robot trail: Shows movement history
+- LiDAR beams: Green lines radiating from robot
+
+Tips:
+- Drive around to explore and map the environment
+- Watch landmarks being detected and added to map
+- The map builds up as you explore new areas
+- This is a basic SLAM implementation for learning
+
+====================================

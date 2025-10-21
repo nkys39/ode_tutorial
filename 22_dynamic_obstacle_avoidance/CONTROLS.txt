@@ -1,0 +1,37 @@
+====================================
+  22: Dynamic Obstacle Avoidance
+  Keyboard Controls
+====================================
+
+Mode Control:
+  M  - Toggle between Manual and Auto drive mode
+
+Manual Mode Controls:
+  W  - Move forward
+  S  - Move backward
+  A  - Turn left
+  D  - Turn right
+  X  - Stop
+
+View:
+  R  - Reset simulation
+  Q  - Quit
+
+Features:
+- Dynamic obstacle avoidance using Velocity Obstacle algorithm
+- Moving pedestrians as dynamic obstacles
+- Automatic mode: Robot navigates to goal while avoiding obstacles
+- Manual mode: Direct keyboard control
+
+Display:
+- Green circle: Robot
+- Red circles: Dynamic obstacles (pedestrians)
+- Blue sphere: Goal position
+- Lines: Velocity obstacles visualization
+
+Tips:
+- Press M to switch to Auto mode and watch the robot navigate
+- In Manual mode, use WASD to control the robot
+- Observe how robot adjusts path to avoid moving obstacles
+
+====================================
