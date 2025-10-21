@@ -148,6 +148,9 @@ public:
 
     const DepthImage& getLastImage() const { return image_; }
 
+    dReal getHorizontalFOV() const { return image_.h_fov; }
+    dReal getVerticalFOV() const { return image_.v_fov; }
+
 private:
     dSpaceID space_;
     DepthImage image_;
