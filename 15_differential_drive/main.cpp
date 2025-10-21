@@ -14,7 +14,9 @@ dGeomID ground_geom;
 // Robot components
 dBodyID robot_body;
 dBodyID left_wheel, right_wheel;
+dBodyID front_caster, rear_caster;
 dJointID left_hinge, right_hinge;
+dJointID front_caster_joint, rear_caster_joint;
 
 // Robot parameters
 const dReal WHEEL_RADIUS = 0.05;
@@ -23,10 +25,11 @@ const dReal WHEEL_BASE = 0.3;
 const dReal BODY_LENGTH = 0.4;
 const dReal BODY_WIDTH = 0.3;
 const dReal BODY_HEIGHT = 0.15;
+const dReal CASTER_RADIUS = 0.03;  // Small caster wheels
 
 // Robot controller
 DifferentialDrive* diff_drive;
-dReal target_linear_vel = 0.5;
+dReal target_linear_vel = 0.0;  // Start stationary (was 0.5)
 dReal target_angular_vel = 0.0;
 
 // Collision callback
@@ -41,7 +44,12 @@ void nearCallback(void* data, dGeomID o1, dGeomID o2) {
 
     for (int i = 0; i < n; i++) {
         contact[i].surface.mode = dContactBounce | dContactSoftCFM;
-        contact[i].surface.mu = 10.0;  // High friction for wheels
+
+        // Low friction for casters, high friction for drive wheels
+        bool is_caster = (b1 == front_caster || b1 == rear_caster ||
+                         b2 == front_caster || b2 == rear_caster);
+        contact[i].surface.mu = is_caster ? 0.1 : 10.0;
+
         contact[i].surface.bounce = 0.1;
         contact[i].surface.soft_cfm = 0.01;
 
@@ -55,7 +63,7 @@ void createRobot(dReal x, dReal y, dReal z) {
     robot_body = createBox(world, space, x, y, z,
                           BODY_LENGTH, BODY_WIDTH, BODY_HEIGHT, 5.0);
 
-    // Create left wheel
+    // Create left wheel (cylinder, rotated 90 degrees around X axis)
     left_wheel = createCylinder(world, space,
                                x - WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2,
                                WHEEL_RADIUS, WHEEL_WIDTH, 0.5);
@@ -63,13 +71,13 @@ void createRobot(dReal x, dReal y, dReal z) {
     dRFromAxisAndAngle(R, 1, 0, 0, M_PI / 2);
     dBodySetRotation(left_wheel, R);
 
-    // Create right wheel
+    // Create right wheel (cylinder, rotated 90 degrees around X axis)
     right_wheel = createCylinder(world, space,
                                 x + WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2,
                                 WHEEL_RADIUS, WHEEL_WIDTH, 0.5);
     dBodySetRotation(right_wheel, R);
 
-    // Create hinge joints for wheels
+    // Create hinge joints for drive wheels
     left_hinge = dJointCreateHinge(world, 0);
     dJointAttach(left_hinge, robot_body, left_wheel);
     dJointSetHingeAnchor(left_hinge, x - WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2);
@@ -79,6 +87,28 @@ void createRobot(dReal x, dReal y, dReal z) {
     dJointAttach(right_hinge, robot_body, right_wheel);
     dJointSetHingeAnchor(right_hinge, x + WHEEL_BASE / 2, y, z - BODY_HEIGHT / 2);
     dJointSetHingeAxis(right_hinge, 1, 0, 0);
+
+    // Create front caster (sphere, low friction, free to rotate)
+    dReal caster_z = z - BODY_HEIGHT / 2 - WHEEL_RADIUS + CASTER_RADIUS;
+    front_caster = createSphere(world, space,
+                               x, y + BODY_WIDTH / 2 + CASTER_RADIUS / 2, caster_z,
+                               CASTER_RADIUS, 0.1);
+
+    // Create rear caster (sphere, low friction, free to rotate)
+    rear_caster = createSphere(world, space,
+                              x, y - BODY_WIDTH / 2 - CASTER_RADIUS / 2, caster_z,
+                              CASTER_RADIUS, 0.1);
+
+    // Attach casters with ball joints (allows free rotation)
+    front_caster_joint = dJointCreateBall(world, 0);
+    dJointAttach(front_caster_joint, robot_body, front_caster);
+    dJointSetBallAnchor(front_caster_joint, x, y + BODY_WIDTH / 2 + CASTER_RADIUS / 2,
+                       z - BODY_HEIGHT / 2);
+
+    rear_caster_joint = dJointCreateBall(world, 0);
+    dJointAttach(rear_caster_joint, robot_body, rear_caster);
+    dJointSetBallAnchor(rear_caster_joint, x, y - BODY_WIDTH / 2 - CASTER_RADIUS / 2,
+                       z - BODY_HEIGHT / 2);
 
     // Initialize differential drive controller
     diff_drive = new DifferentialDrive(WHEEL_BASE, WHEEL_RADIUS);
@@ -147,16 +177,27 @@ void drawScene() {
     Viewer::setColor(0.3f, 0.7f, 0.3f);
     Viewer::drawBox(pos, R, sides);
 
-    // Draw left wheel
+    // Draw left drive wheel (black)
     const dReal* lw_pos = dBodyGetPosition(left_wheel);
     const dReal* lw_R = dBodyGetRotation(left_wheel);
     Viewer::setColor(0.2f, 0.2f, 0.2f);
     Viewer::drawCylinder(lw_pos, lw_R, WHEEL_WIDTH, WHEEL_RADIUS);
 
-    // Draw right wheel
+    // Draw right drive wheel (black)
     const dReal* rw_pos = dBodyGetPosition(right_wheel);
     const dReal* rw_R = dBodyGetRotation(right_wheel);
     Viewer::drawCylinder(rw_pos, rw_R, WHEEL_WIDTH, WHEEL_RADIUS);
+
+    // Draw front caster (gray)
+    const dReal* fc_pos = dBodyGetPosition(front_caster);
+    const dReal* fc_R = dBodyGetRotation(front_caster);
+    Viewer::setColor(0.5f, 0.5f, 0.5f);
+    Viewer::drawSphere(fc_pos, fc_R, CASTER_RADIUS);
+
+    // Draw rear caster (gray)
+    const dReal* rc_pos = dBodyGetPosition(rear_caster);
+    const dReal* rc_R = dBodyGetRotation(rear_caster);
+    Viewer::drawSphere(rc_pos, rc_R, CASTER_RADIUS);
 }
 
 void keyboardCallback(unsigned char key, int x, int y) {
