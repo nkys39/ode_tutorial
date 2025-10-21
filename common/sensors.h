@@ -89,40 +89,44 @@ struct Color {
     Color(float r_ = 0.0f, float g_ = 0.0f, float b_ = 0.0f) : r(r_), g(g_), b(b_) {}
 };
 
-// RGB-D camera image
+// RGB-D camera image (supports different resolutions for RGB and depth)
 struct RGBDImage {
     std::vector<std::vector<dReal>> depths;
     std::vector<std::vector<Color>> colors;
-    int width;
-    int height;
+    int rgb_width, rgb_height;    // RGB camera resolution (high-res)
+    int depth_width, depth_height; // Depth sensor resolution (low-res)
     dReal h_fov;  // Horizontal field of view
     dReal v_fov;  // Vertical field of view
     dReal max_range;
 
-    RGBDImage(int w = 64, int h = 48, dReal hfov = M_PI / 2, dReal vfov = M_PI / 3, dReal max_r = 10.0)
-        : width(w), height(h), h_fov(hfov), v_fov(vfov), max_range(max_r) {
-        depths.resize(height, std::vector<dReal>(width, max_range));
-        colors.resize(height, std::vector<Color>(width, Color(0.5f, 0.5f, 0.5f)));
+    RGBDImage(int rgb_w = 640, int rgb_h = 480, int depth_w = 64, int depth_h = 48,
+              dReal hfov = M_PI / 2, dReal vfov = M_PI / 3, dReal max_r = 10.0)
+        : rgb_width(rgb_w), rgb_height(rgb_h), depth_width(depth_w), depth_height(depth_h),
+          h_fov(hfov), v_fov(vfov), max_range(max_r) {
+        depths.resize(depth_height, std::vector<dReal>(depth_width, max_range));
+        colors.resize(rgb_height, std::vector<Color>(rgb_width, Color(0.5f, 0.5f, 0.5f)));
     }
 };
 
 // For backward compatibility
 typedef RGBDImage DepthImage;
 
-// Simple depth camera
+// RGB-D camera (RGB: OpenGL rendering, Depth: raycast)
 class DepthCamera {
 public:
-    DepthCamera(dSpaceID space, int width = 64, int height = 48,
+    DepthCamera(dSpaceID space, int rgb_width = 640, int rgb_height = 480,
+                int depth_width = 64, int depth_height = 48,
                 dReal h_fov = M_PI / 2, dReal v_fov = M_PI / 3, dReal max_range = 10.0)
-        : space_(space), image_(width, height, h_fov, v_fov, max_range) {}
+        : space_(space), image_(rgb_width, rgb_height, depth_width, depth_height, h_fov, v_fov, max_range) {}
 
-    DepthImage capture(const dReal* position, const dReal* rotation) {
-        dReal h_angle_step = image_.h_fov / image_.width;
-        dReal v_angle_step = image_.v_fov / image_.height;
+    // Capture depth only via raycast (RGB will be captured by OpenGL rendering)
+    DepthImage captureDepth(const dReal* position, const dReal* rotation) {
+        dReal h_angle_step = image_.h_fov / image_.depth_width;
+        dReal v_angle_step = image_.v_fov / image_.depth_height;
 
-        for (int v = 0; v < image_.height; v++) {
+        for (int v = 0; v < image_.depth_height; v++) {
             dReal v_angle = -image_.v_fov / 2 + v * v_angle_step;
-            for (int h = 0; h < image_.width; h++) {
+            for (int h = 0; h < image_.depth_width; h++) {
                 dReal h_angle = -image_.h_fov / 2 + h * h_angle_step;
 
                 // Ray direction in camera frame
@@ -135,7 +139,6 @@ public:
                 dGeomRaySet(ray, position[0], position[1], position[2], dx, dy, dz);
 
                 dReal closest_distance = image_.max_range;
-                dGeomID closest_geom = nullptr;
                 int num_geoms = dSpaceGetNumGeoms(space_);
                 for (int j = 0; j < num_geoms; j++) {
                     dGeomID geom = dSpaceGetGeom(space_, j);
@@ -146,33 +149,25 @@ public:
                         dReal distance = contact[0].depth;
                         if (distance < closest_distance) {
                             closest_distance = distance;
-                            closest_geom = geom;
                         }
                     }
                 }
 
                 image_.depths[v][h] = closest_distance;
-
-                // Get color from geometry data
-                if (closest_geom != nullptr && closest_distance < image_.max_range) {
-                    Color* color = static_cast<Color*>(dGeomGetData(closest_geom));
-                    if (color != nullptr) {
-                        image_.colors[v][h] = *color;
-                    } else {
-                        // Default gray color if no color data
-                        image_.colors[v][h] = Color(0.7f, 0.7f, 0.7f);
-                    }
-                } else {
-                    // Sky/background color
-                    image_.colors[v][h] = Color(0.5f, 0.7f, 0.9f);
-                }
-
                 dGeomDestroy(ray);
             }
         }
 
         return image_;
     }
+
+    // Backward compatibility
+    DepthImage capture(const dReal* position, const dReal* rotation) {
+        return captureDepth(position, rotation);
+    }
+
+    // Get reference to image for external RGB data injection
+    RGBDImage& getImage() { return image_; }
 
     const DepthImage& getLastImage() const { return image_; }
 
