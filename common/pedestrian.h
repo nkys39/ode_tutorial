@@ -84,8 +84,9 @@ public:
         }
 
         // Apply force (scaled by mass)
-        const dMass* mass = dBodyGetMass(body_);
-        dBodyAddForce(body_, fx * mass->mass, fy * mass->mass, 0);
+        dMass mass;
+        dBodyGetMass(body_, &mass);
+        dBodyAddForce(body_, fx * mass.mass, fy * mass.mass, 0);
 
         // Limit vertical movement
         dReal vz = vel[2];
@@ -111,8 +112,9 @@ public:
             dReal fx = (desired_vx - vel[0]) / tau;
             dReal fy = (desired_vy - vel[1]) / tau;
 
-            const dMass* mass = dBodyGetMass(body_);
-            dBodyAddForce(body_, fx * mass->mass, fy * mass->mass, 0);
+            dMass mass;
+            dBodyGetMass(body_, &mass);
+            dBodyAddForce(body_, fx * mass.mass, fy * mass.mass, 0);
         }
     }
 
