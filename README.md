@@ -63,6 +63,24 @@ brew install cmake
 - **13_robot_arm**: ロボットアームのシミュレーション
 - **14_physics_playground**: インタラクティブな物理シミュレーション環境
 
+### 5. ロボティクス編
+- **15_differential_drive**: 差動2輪ロボットの基本実装
+- **16_odometry**: オドメトリ（車輪エンコーダによる自己位置推定）
+- **17_lidar_sensor**: LiDARセンサのシミュレーション（レイキャスティング）
+- **18_camera_sensor**: カメラセンサのシミュレーション（深度カメラ含む）
+- **19_robot_with_lidar**: 差動2輪ロボット + LiDARセンサの統合
+- **20_slam_basics**: SLAM（自己位置推定と地図作成）の基礎
+- **21_obstacle_avoidance**: LiDARを使った障害物回避
+- **22_autonomous_navigation**: 自律ナビゲーションシステム
+
+#### ロボティクス編で学べること
+- **差動2輪ロボット**: 左右の車輪速度を制御して移動・旋回する基本的なロボット
+- **オドメトリ**: 車輪の回転から位置・姿勢を推定する技術（累積誤差の影響も体験）
+- **LiDARセンサ**: レーザーレイキャスティングによる距離測定と環境マップ作成
+- **カメラセンサ**: RGB画像と深度情報の取得
+- **センサ融合**: 複数センサを組み合わせた高度なロボットシステム
+- **自律制御**: センサ情報を使った障害物回避と経路計画
+
 ## プロジェクト構成
 
 ```
@@ -72,7 +90,9 @@ ode_tutorial/
 ├── common/                 # 共通ユーティリティ
 │   ├── viewer.h           # OpenGL可視化ヘルパー
 │   ├── viewer.cpp
-│   └── utils.h            # 共通ユーティリティ関数
+│   ├── utils.h            # 共通ユーティリティ関数
+│   ├── sensors.h          # センサーシミュレーション
+│   └── robot_utils.h      # ロボット関連ユーティリティ
 ├── 01_hello_world/
 │   ├── main.cpp
 │   └── README.md
@@ -83,10 +103,20 @@ ode_tutorial/
 │   ├── main.cpp
 │   └── README.md
 ...
+├── 15_differential_drive/
+│   ├── main.cpp
+│   └── README.md
+├── 19_robot_with_lidar/
+│   ├── main.cpp
+│   └── README.md
+...
 └── docs/                   # ドキュメント
     ├── ode_basics.md      # ODE基礎知識
     ├── collision.md       # 衝突検出の詳細
-    └── joints.md          # ジョイントの詳細
+    ├── joints.md          # ジョイントの詳細
+    ├── robotics.md        # ロボティクス応用
+    ├── sensors.md         # センサーシミュレーション
+    └── odometry.md        # オドメトリの理論と実装
 ```
 
 ## ビルド方法
@@ -128,9 +158,17 @@ cd build
 
 ## 参考資料
 
+### ODE関連
 - [ODE公式サイト](https://www.ode.org/)
 - [ODE公式ドキュメント](https://ode.org/wiki/index.php/Manual)
 - [ODE APIリファレンス](https://ode.org/wiki/index.php/HOWTO)
+
+### ロボティクス関連
+- 差動2輪ロボットの運動学（Differential Drive Kinematics）
+- オドメトリの理論と誤差解析
+- LiDARセンサの原理とレイキャスティング
+- SLAM（Simultaneous Localization and Mapping）の基礎
+- ROS（Robot Operating System）との連携可能性
 
 ## トラブルシューティング
 
