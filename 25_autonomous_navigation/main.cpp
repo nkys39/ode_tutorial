@@ -97,7 +97,7 @@ void createRobot() {
 
     diff_drive = new DifferentialDrive(WHEEL_BASE, WHEEL_RADIUS);
     odometry = new Odometry(WHEEL_BASE, WHEEL_RADIUS);
-    lidar = new LidarSensor(space, 360, -M_PI, M_PI, 5.0);
+    lidar = new LidarSensor(space, -M_PI, M_PI, 360, 5.0);
 }
 
 void createObstacles() {
