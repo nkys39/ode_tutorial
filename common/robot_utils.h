@@ -3,6 +3,7 @@
 
 #include <ode/ode.h>
 #include <cmath>
+#include <vector>
 #include "utils.h"
 
 namespace ode_tutorial {
