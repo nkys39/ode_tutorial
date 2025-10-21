@@ -1,3 +1,10 @@
+// ===================================================================
+// 04: Multiple Objects - 複数オブジェクトの管理
+// ===================================================================
+// このチュートリアルでは、複数のオブジェクトを効率的に管理する方法を学びます。
+// std::vectorを使ったデータ管理と、範囲ベースforループの使い方を理解しましょう。
+// ===================================================================
+
 #include "viewer.h"
 #include "utils.h"
 #include <iostream>
@@ -5,147 +12,278 @@
 
 using namespace ode_tutorial;
 
-// ODE world and objects
-dWorldID world;
-dSpaceID space;
-dJointGroupID contact_group;
-dGeomID ground_geom;
+// ===================================================================
+// グローバル変数
+// ===================================================================
+dWorldID world;           // 物理世界
+dSpaceID space;           // 衝突検出空間
+dJointGroupID contact_group;  // 接触ジョイントグループ
+dGeomID ground_geom;      // 地面のジオメトリ
 
+// ===================================================================
+// 新しい概念：構造体によるデータ管理
+// ===================================================================
+// 複数のオブジェクトを管理するには、関連する情報をまとめる必要があります
+//
+// struct Object とは？
+//   1つのオブジェクトに関する情報（剛体、形状、種類など）を
+//   1つの構造体にまとめたものです
+//
+// なぜ構造体を使う？
+//   - 複数の関連データを1つにまとめて管理できる
+//   - コードの可読性が向上する
+//   - 配列やベクターで複数のオブジェクトを簡単に扱える
 struct Object {
-    dBodyID body;
-    dGeomID geom;
-    int type; // 0=box, 1=sphere
-    dReal size[3]; // for box: lx,ly,lz; for sphere: radius,0,0
+    dBodyID body;    // 剛体（物理的性質）
+    dGeomID geom;    // ジオメトリ（形状）
+    int type;        // 種類：0=箱、1=球
+    dReal size[3];   // サイズ情報
+                     //   箱の場合：[幅, 奥行き, 高さ]
+                     //   球の場合：[半径, 未使用, 未使用]
 };
 
+// ===================================================================
+// std::vector による動的配列
+// ===================================================================
+// std::vector<Object> とは？
+//   可変長配列（動的に要素を追加/削除できる配列）です
+//
+// 通常の配列との違い：
+//   通常の配列：Object objects[10];  // サイズ固定（10個）
+//   std::vector：std::vector<Object> objects;  // サイズ可変
+//
+// 主な操作：
+//   objects.push_back(obj);  // 末尾に要素を追加
+//   objects.size();          // 要素数を取得
+//   objects[i];              // i番目の要素にアクセス
 std::vector<Object> objects;
 
-// Collision callback
+// ===================================================================
+// 衝突コールバック関数
+// ===================================================================
+// 前回（03）と基本的に同じですが、複数のオブジェクト間の衝突を
+// すべて処理します
 void nearCallback(void* data, dGeomID o1, dGeomID o2) {
+    // 剛体を取得
     dBodyID b1 = dGeomGetBody(o1);
     dBodyID b2 = dGeomGetBody(o2);
+
+    // ジョイントで接続されている場合は除外
     if (b1 && b2 && dAreConnected(b1, b2)) return;
 
+    // 接触点を検出
     const int MAX_CONTACTS = 4;
     dContact contact[MAX_CONTACTS];
     int n = dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(dContact));
 
+    // 各接触点に対して接触ジョイントを作成
     for (int i = 0; i < n; i++) {
         contact[i].surface.mode = dContactBounce | dContactSoftCFM;
-        contact[i].surface.mu = 0.5;
-        contact[i].surface.bounce = 0.3;
-        contact[i].surface.soft_cfm = 0.01;
+        contact[i].surface.mu = 0.5;          // 摩擦係数
+        contact[i].surface.bounce = 0.3;      // 反発係数（あまり跳ねない）
+        contact[i].surface.soft_cfm = 0.01;   // ソフト接触
 
         dJointID c = dJointCreateContact(world, contact_group, &contact[i]);
         dJointAttach(c, b1, b2);
     }
 }
 
+// ===================================================================
+// オブジェクト作成関数
+// ===================================================================
+// 複数のオブジェクト（箱と球）を作成し、vectorに追加します
 void createObjects() {
-    Object obj;
+    Object obj;  // 一時的なObject構造体
 
-    // Create boxes
+    // ===================================================================
+    // 箱を3個作成
+    // ===================================================================
+    // forループで同じような処理を繰り返します
     for (int i = 0; i < 3; i++) {
-        obj.type = 0;
-        obj.size[0] = 0.3;
-        obj.size[1] = 0.3;
-        obj.size[2] = 0.3;
+        obj.type = 0;     // type 0 = 箱
+        obj.size[0] = 0.3;  // 幅 (X方向)
+        obj.size[1] = 0.3;  // 奥行き (Y方向)
+        obj.size[2] = 0.3;  // 高さ (Z方向)
+
+        // 箱を作成：X座標を 0.8m 間隔でずらして配置
+        // 位置：(-1.5, 0, 2.0), (-0.7, 0, 2.5), (0.1, 0, 3.0)
+        // 高さもずらして、階段状に配置
         obj.body = createBox(world, space, -1.5 + i * 0.8, 0, 2.0 + i * 0.5,
                             obj.size[0], obj.size[1], obj.size[2], 1.0, &obj.geom);
+
+        // std::vector::push_back(): 末尾に要素を追加
+        // このオブジェクトをobjects配列に追加
         objects.push_back(obj);
     }
 
-    // Create spheres
+    // ===================================================================
+    // 球を3個作成
+    // ===================================================================
     for (int i = 0; i < 3; i++) {
-        obj.type = 1;
-        obj.size[0] = 0.2; // radius
+        obj.type = 1;      // type 1 = 球
+        obj.size[0] = 0.2; // 半径 0.2m
+
+        // 球を作成：箱とは別の位置（Y=1.5m）に配置
+        // 位置：(-1.0, 1.5, 3.0), (-0.2, 1.5, 3.5), (0.6, 1.5, 4.0)
         obj.body = createSphere(world, space, -1.0 + i * 0.8, 1.5, 3.0 + i * 0.5,
                                obj.size[0], 1.0, &obj.geom);
-        objects.push_back(obj);
+
+        objects.push_back(obj);  // vectorに追加
     }
+
+    // 結果：objects配列には6個のオブジェクト（箱3個、球3個）が格納される
 }
 
+// ===================================================================
+// リセット関数
+// ===================================================================
+// すべてのオブジェクトを初期状態に戻します
 void reset() {
-    int box_idx = 0;
-    int sphere_idx = 0;
+    int box_idx = 0;     // 箱のインデックス
+    int sphere_idx = 0;  // 球のインデックス
 
+    // ===================================================================
+    // 範囲ベースforループによる反復処理
+    // ===================================================================
+    // for (auto& obj : objects) とは？
+    //   objects配列の各要素を順番に取り出して処理する構文です
+    //
+    // auto とは？
+    //   型を自動推論します（ここでは Object& 型）
+    //
+    // & とは？
+    //   参照（コピーではなく元のデータを直接操作）
+    //   これがないと、変更が反映されません
+    //
+    // 通常のforループとの比較：
+    //   通常：for (int i = 0; i < objects.size(); i++) { Object& obj = objects[i]; ... }
+    //   範囲：for (auto& obj : objects) { ... }
     for (auto& obj : objects) {
-        if (obj.type == 0) { // box
+        // オブジェクトの種類に応じて初期位置を設定
+        if (obj.type == 0) { // 箱の場合
             dBodySetPosition(obj.body, -1.5 + box_idx * 0.8, 0, 2.0 + box_idx * 0.5);
             box_idx++;
-        } else { // sphere
+        } else { // 球の場合 (obj.type == 1)
             dBodySetPosition(obj.body, -1.0 + sphere_idx * 0.8, 1.5, 3.0 + sphere_idx * 0.5);
             sphere_idx++;
         }
-        dBodySetLinearVel(obj.body, 0, 0, 0);
-        dBodySetAngularVel(obj.body, 0, 0, 0);
 
+        // 速度をゼロに設定
+        dBodySetLinearVel(obj.body, 0, 0, 0);    // 直線速度
+        dBodySetAngularVel(obj.body, 0, 0, 0);   // 角速度
+
+        // 回転をリセット（Z軸周りに0度回転 = 回転なし）
         dMatrix3 R;
         dRFromAxisAndAngle(R, 0, 0, 1, 0);
         dBodySetRotation(obj.body, R);
     }
 }
 
+// ===================================================================
+// シミュレーションステップ関数
+// ===================================================================
 void simulationStep(double dt) {
+    // リセット処理
     if (Viewer::shouldReset()) {
         reset();
         Viewer::setShouldReset(false);
     }
 
-    dSpaceCollide(space, 0, &nearCallback);
-    dWorldStep(world, dt);
-    dJointGroupEmpty(contact_group);
+    // 衝突検出 → 物理演算 → 接触ジョイント削除
+    // （前回と同じ3ステップ）
+    dSpaceCollide(space, 0, &nearCallback);  // すべてのオブジェクトペアをチェック
+    dWorldStep(world, dt);                   // 物理演算を1ステップ進める
+    dJointGroupEmpty(contact_group);         // 古い接触ジョイントを削除
 }
 
+// ===================================================================
+// 描画コールバック関数
+// ===================================================================
 void drawScene() {
-    // Draw ground
+    // ===================================================================
+    // 地面の描画
+    // ===================================================================
     dVector4 plane;
     dGeomPlaneGetParams(ground_geom, plane);
-    Viewer::setColor(0.5f, 0.5f, 0.5f);
+    Viewer::setColor(0.5f, 0.5f, 0.5f);  // グレー
     Viewer::drawPlane(plane, plane[3], 10.0);
 
-    // Draw objects
+    // ===================================================================
+    // すべてのオブジェクトを描画
+    // ===================================================================
+    // const auto& とは？
+    //   autoは型を自動推論、constは変更不可、&は参照
+    //   描画だけなので変更不要 → constをつけると安全
     for (const auto& obj : objects) {
+        // 位置と回転を取得
         const dReal* pos = dBodyGetPosition(obj.body);
         const dReal* R = dBodyGetRotation(obj.body);
 
-        if (obj.type == 0) { // box
-            Viewer::setColor(0.8f, 0.4f, 0.2f);
-            Viewer::drawBox(pos, R, obj.size);
-        } else { // sphere
-            Viewer::setColor(0.2f, 0.7f, 0.9f);
-            Viewer::drawSphere(pos, R, obj.size[0]);
+        // オブジェクトの種類に応じて色と形状を変えて描画
+        if (obj.type == 0) { // 箱の場合
+            Viewer::setColor(0.8f, 0.4f, 0.2f);  // オレンジ色
+            Viewer::drawBox(pos, R, obj.size);   // サイズ配列を渡す
+        } else { // 球の場合 (obj.type == 1)
+            Viewer::setColor(0.2f, 0.7f, 0.9f);  // 水色
+            Viewer::drawSphere(pos, R, obj.size[0]);  // 半径を渡す
         }
     }
 }
 
+// ===================================================================
+// メイン関数
+// ===================================================================
 int main(int argc, char** argv) {
     std::cout << "=== 04: Multiple Objects ===" << std::endl;
-    std::cout << "Multiple boxes and spheres fall and collide." << std::endl;
+    std::cout << "複数の箱と球が落下して衝突するシミュレーションです。" << std::endl;
+    std::cout << "std::vectorを使った複数オブジェクトの管理方法を学びます。" << std::endl;
     std::cout << std::endl;
 
+    // ===================================================================
+    // ODE初期化
+    // ===================================================================
     dInitODE();
 
+    // ===================================================================
+    // 物理世界と衝突空間の作成
+    // ===================================================================
     world = dWorldCreate();
-    dWorldSetGravity(world, 0, 0, -9.81);
+    dWorldSetGravity(world, 0, 0, -9.81);  // 地球の重力
 
-    space = dHashSpaceCreate(0);
-    contact_group = dJointGroupCreate(0);
+    space = dHashSpaceCreate(0);           // 衝突検出空間
+    contact_group = dJointGroupCreate(0);  // 接触ジョイントグループ
 
+    // ===================================================================
+    // 地面の作成
+    // ===================================================================
     ground_geom = dCreatePlane(space, 0, 0, 1, 0);
 
+    // ===================================================================
+    // 複数のオブジェクトを作成
+    // ===================================================================
+    // この関数内で、箱3個と球3個が作成され、objects配列に追加される
     createObjects();
 
+    // ===================================================================
+    // ビューワーの作成
+    // ===================================================================
     Viewer viewer(argc, argv, "04: Multiple Objects - ODE Tutorial");
     viewer.setSimulationCallback(simulationStep);
     viewer.setDrawCallback(drawScene);
 
+    // ===================================================================
+    // メインループ開始
+    // ===================================================================
     viewer.start();
 
-    // Cleanup
+    // ===================================================================
+    // クリーンアップ
+    // ===================================================================
+    // std::vectorに格納されたすべてのオブジェクトを破棄
     for (auto& obj : objects) {
-        dBodyDestroy(obj.body);
+        dBodyDestroy(obj.body);  // 剛体を破棄（geomも自動破棄）
     }
+
     dJointGroupDestroy(contact_group);
     dSpaceDestroy(space);
     dWorldDestroy(world);
