@@ -1,3 +1,10 @@
+// ===================================================================
+// 19: Robot with LiDAR - LiDAR搭載ロボット（障害物回避）
+// ===================================================================
+// このチュートリアルでは、LiDARセンサーを搭載したロボットを作ります。
+// センサーデータを使って簡単な障害物回避を実装します。
+// ===================================================================
+
 #include "viewer.h"
 #include "utils.h"
 #include "robot_utils.h"
@@ -7,42 +14,48 @@
 
 using namespace ode_tutorial;
 
-// ODE world and objects
+// ===================================================================
+// グローバル変数
+// ===================================================================
 dWorldID world;
 dSpaceID space;
 dJointGroupID contact_group;
 dGeomID ground_geom;
 
-// Robot components
-dBodyID robot_body;
-dBodyID left_wheel, right_wheel;
-dJointID left_hinge, right_hinge;
+// ===================================================================
+// ロボットコンポーネント
+// ===================================================================
+dBodyID robot_body;              // ロボット本体
+dBodyID left_wheel, right_wheel; // 左右の車輪
+dJointID left_hinge, right_hinge;// 車輪のヒンジジョイント
 
-// Robot parameters
-const dReal WHEEL_RADIUS = 0.05;
-const dReal WHEEL_WIDTH = 0.03;
-const dReal WHEEL_BASE = 0.3;
-const dReal BODY_LENGTH = 0.4;
-const dReal BODY_WIDTH = 0.3;
-const dReal BODY_HEIGHT = 0.15;
+// ロボットパラメーター
+const dReal WHEEL_RADIUS = 0.05;   // 車輪半径：5cm
+const dReal WHEEL_WIDTH = 0.03;    // 車輪幅：3cm
+const dReal WHEEL_BASE = 0.3;      // 車輪間隔：30cm
+const dReal BODY_LENGTH = 0.4;     // 本体長さ：40cm
+const dReal BODY_WIDTH = 0.3;      // 本体幅：30cm
+const dReal BODY_HEIGHT = 0.15;    // 本体高さ：15cm
 
-// LiDAR sensor
+// LiDARセンサー
 LidarSensor* lidar;
 
-// Obstacles
+// 障害物
 struct Obstacle {
     dBodyID body;
     dGeomID geom;
-    dReal lx, ly, lz;
+    dReal lx, ly, lz;  // サイズ
 };
 std::vector<Obstacle> obstacles;
 
-// Robot controller
-DifferentialDrive* diff_drive;
-dReal target_linear_vel = 0.0;
-dReal target_angular_vel = 0.0;
+// ロボット制御
+DifferentialDrive* diff_drive;     // 差動駆動制御
+dReal target_linear_vel = 0.0;     // 目標直進速度
+dReal target_angular_vel = 0.0;    // 目標角速度
 
-// Collision callback
+// ===================================================================
+// 衝突コールバック関数
+// ===================================================================
 void nearCallback(void* data, dGeomID o1, dGeomID o2) {
     dBodyID b1 = dGeomGetBody(o1);
     dBodyID b2 = dGeomGetBody(o2);
@@ -53,6 +66,7 @@ void nearCallback(void* data, dGeomID o1, dGeomID o2) {
     int n = dCollide(o1, o2, MAX_CONTACTS, &contact[0].geom, sizeof(dContact));
 
     for (int i = 0; i < n; i++) {
+        // mu = 10.0: 高摩擦で車輪が滑りにくい
         contact[i].surface.mode = dContactBounce | dContactSoftCFM;
         contact[i].surface.mu = 10.0;
         contact[i].surface.bounce = 0.1;
@@ -63,9 +77,13 @@ void nearCallback(void* data, dGeomID o1, dGeomID o2) {
     }
 }
 
+// ===================================================================
+// 障害物作成関数
+// ===================================================================
 void createObstacles() {
     Obstacle obs;
 
+    // 障害物を複数配置
     obs.lx = 0.5; obs.ly = 0.5; obs.lz = 0.5;
     obs.body = createBox(world, space, 2, 0, 0.25, obs.lx, obs.ly, obs.lz, 1.0, &obs.geom);
     obstacles.push_back(obs);
@@ -87,12 +105,15 @@ void createObstacles() {
     obstacles.push_back(obs);
 }
 
+// ===================================================================
+// ロボット作成関数
+// ===================================================================
 void createRobot(dReal x, dReal y, dReal z) {
-    // Create robot body (z is body center height)
+    // 1. ロボット本体を作成
     robot_body = createBox(world, space, x, y, z,
                           BODY_LENGTH, BODY_WIDTH, BODY_HEIGHT, 5.0);
 
-    // Create wheels at body bottom level
+    // 2. 車輪を作成（本体の下部に配置）
     dReal wheel_center_z = z - BODY_HEIGHT / 2;
     left_wheel = createCylinder(world, space,
                                x - WHEEL_BASE / 2, y, wheel_center_z,
@@ -106,6 +127,7 @@ void createRobot(dReal x, dReal y, dReal z) {
                                 WHEEL_RADIUS, WHEEL_WIDTH, 0.5);
     dBodySetRotation(right_wheel, R);
 
+    // 3. ヒンジジョイントで車輪を接続
     left_hinge = dJointCreateHinge(world, 0);
     dJointAttach(left_hinge, robot_body, left_wheel);
     dJointSetHingeAnchor(left_hinge, x - WHEEL_BASE / 2, y, wheel_center_z);
@@ -116,11 +138,15 @@ void createRobot(dReal x, dReal y, dReal z) {
     dJointSetHingeAnchor(right_hinge, x + WHEEL_BASE / 2, y, wheel_center_z);
     dJointSetHingeAxis(right_hinge, 1, 0, 0);
 
+    // 4. 差動駆動制御を初期化
     diff_drive = new DifferentialDrive(WHEEL_BASE, WHEEL_RADIUS);
 }
 
+// ===================================================================
+// リセット関数
+// ===================================================================
 void reset() {
-    // Correct height: wheel radius + half body height
+    // ロボットを初期位置に戻す
     dReal correct_height = WHEEL_RADIUS + BODY_HEIGHT / 2;
     dBodySetPosition(robot_body, 0, 0, correct_height);
     dBodySetLinearVel(robot_body, 0, 0, 0);
@@ -131,36 +157,71 @@ void reset() {
     dBodySetRotation(robot_body, R);
 }
 
+// ===================================================================
+// シミュレーションステップ関数
+// ===================================================================
 void simulationStep(double dt) {
+    // リセット処理
     if (Viewer::shouldReset()) {
         reset();
         Viewer::setShouldReset(false);
     }
 
-    // Get robot pose
+    // ===================================================================
+    // 1. ロボットの現在位置と姿勢を取得
+    // ===================================================================
     const dReal* pos = dBodyGetPosition(robot_body);
     const dReal* R = dBodyGetRotation(robot_body);
     dReal yaw = getYawFromRotation(R);
 
-    // Perform LiDAR scan from robot position
+    // ===================================================================
+    // 2. LiDARスキャンを実行
+    // ===================================================================
+    // ロボット位置からLiDARスキャン
     dReal lidar_pos[3] = {pos[0], pos[1], pos[2]};
     LidarScan scan = lidar->scan(lidar_pos, yaw);
 
-    // Simple obstacle avoidance using LiDAR
+    // ===================================================================
+    // 3. 簡易障害物回避アルゴリズム
+    // ===================================================================
+    // 前方60度範囲（インデックス150〜210）の最小距離を計算
     dReal min_front_distance = scan.max_range;
-    for (int i = 150; i < 210; i++) {  // Front 60 degrees
+    for (int i = 150; i < 210; i++) {
         if (scan.ranges[i] < min_front_distance) {
             min_front_distance = scan.ranges[i];
         }
     }
 
-    // If obstacle ahead, turn
+    // 障害物が0.8m以内にあれば旋回
+    //
+    // 障害物回避アルゴリズム（リアクティブ方式）：
+    //   1. LiDARで前方をスキャン
+    //   2. 前方に障害物があるか判定
+    //   3. 障害物があれば旋回（回避行動）
+    //   4. なければ直進
+    //
+    // この手法の特徴：
+    //   利点：
+    //     - シンプルで実装が簡単
+    //     - リアルタイム動作
+    //     - センサーノイズに強い
+    //   欠点：
+    //     - 局所最適（行き止まりで動けなくなる）
+    //     - 目標位置への最短経路は見つけられない
+    //     - U字型の障害物で往復してしまう
+    //
+    // より高度な手法：
+    //   - DWA（Dynamic Window Approach）
+    //   - VFH（Vector Field Histogram）
+    //   - ポテンシャル場法
     if (min_front_distance < 0.8 && target_linear_vel > 0) {
         std::cout << "Obstacle ahead at " << min_front_distance << "m - turning!" << std::endl;
-        target_angular_vel = 1.0;  // Turn left
+        target_angular_vel = 1.0;  // 左旋回
     }
 
-    // Apply motor control
+    // ===================================================================
+    // 4. モーター制御を適用
+    // ===================================================================
     dReal left_vel, right_vel;
     diff_drive->computeWheelVelocities(target_linear_vel, target_angular_vel,
                                       left_vel, right_vel);
@@ -171,24 +232,27 @@ void simulationStep(double dt) {
     dJointSetHingeParam(right_hinge, dParamVel, right_vel);
     dJointSetHingeParam(right_hinge, dParamFMax, 10.0);
 
-    // Collision detection
+    // 衝突判定
     dSpaceCollide(space, 0, &nearCallback);
 
-    // Step simulation
+    // 物理シミュレーション
     dWorldStep(world, dt);
 
-    // Clear contacts
+    // 接触ジョイントをクリア
     dJointGroupEmpty(contact_group);
 }
 
+// ===================================================================
+// 描画コールバック関数
+// ===================================================================
 void drawScene() {
-    // Draw ground
+    // 地面を描画
     dVector4 plane;
     dGeomPlaneGetParams(ground_geom, plane);
     Viewer::setColor(0.5f, 0.5f, 0.5f);
     Viewer::drawPlane(plane, plane[3], 10.0);
 
-    // Draw obstacles
+    // 障害物を描画（赤色）
     for (const auto& obs : obstacles) {
         const dReal* pos = dBodyGetPosition(obs.body);
         const dReal* R = dBodyGetRotation(obs.body);
@@ -198,14 +262,14 @@ void drawScene() {
         Viewer::drawBox(pos, R, sides);
     }
 
-    // Draw robot body
+    // ロボット本体を描画（緑色）
     const dReal* pos = dBodyGetPosition(robot_body);
     const dReal* R = dBodyGetRotation(robot_body);
     dReal sides[3] = {BODY_LENGTH, BODY_WIDTH, BODY_HEIGHT};
     Viewer::setColor(0.3f, 0.7f, 0.3f);
     Viewer::drawBox(pos, R, sides);
 
-    // Draw wheels
+    // 車輪を描画（黒色）
     const dReal* lw_pos = dBodyGetPosition(left_wheel);
     const dReal* lw_R = dBodyGetRotation(left_wheel);
     Viewer::setColor(0.2f, 0.2f, 0.2f);
@@ -215,7 +279,9 @@ void drawScene() {
     const dReal* rw_R = dBodyGetRotation(right_wheel);
     Viewer::drawCylinder(rw_pos, rw_R, WHEEL_WIDTH, WHEEL_RADIUS);
 
-    // Draw LiDAR rays
+    // ===================================================================
+    // LiDAR光線を描画（可視化）
+    // ===================================================================
     dReal yaw = getYawFromRotation(R);
     const LidarScan& scan = lidar->getLastScan();
     for (size_t i = 0; i < scan.ranges.size(); i += 10) {
@@ -229,11 +295,15 @@ void drawScene() {
         dReal start[3] = {pos[0], pos[1], pos[2]};
         dReal end[3] = {end_x, end_y, end_z};
 
+        // 距離に応じて色を変える
         float color = 1.0f - (range / scan.max_range);
         Viewer::drawLine(start, end, color, 1.0f, color);
     }
 }
 
+// ===================================================================
+// キーボードコールバック関数
+// ===================================================================
 void keyboardCallback(unsigned char key, int x, int y) {
     switch (key) {
         case 'w':
@@ -269,10 +339,13 @@ void keyboardCallback(unsigned char key, int x, int y) {
     }
 }
 
+// ===================================================================
+// メイン関数
+// ===================================================================
 int main(int argc, char** argv) {
-    std::cout << "=== 19: Robot with LiDAR ===" << std::endl;
-    std::cout << "Differential drive robot equipped with LiDAR sensor." << std::endl;
-    std::cout << "Simple obstacle avoidance is implemented!" << std::endl;
+    std::cout << "=== 19: Robot with LiDAR（LiDAR搭載ロボット） ===" << std::endl;
+    std::cout << "差動駆動ロボットにLiDARセンサーを搭載" << std::endl;
+    std::cout << "簡易障害物回避アルゴリズムを実装！" << std::endl;
     std::cout << std::endl;
     std::cout << "Controls:" << std::endl;
     std::cout << "  W: Move forward (with auto obstacle avoidance)" << std::endl;
@@ -282,7 +355,7 @@ int main(int argc, char** argv) {
     std::cout << "  X: Stop" << std::endl;
     std::cout << std::endl;
 
-    // Initialize ODE
+    // ODE初期化
     dInitODE();
 
     world = dWorldCreate();
@@ -291,20 +364,21 @@ int main(int argc, char** argv) {
     space = dHashSpaceCreate(0);
     contact_group = dJointGroupCreate(0);
 
-    // Create ground
+    // 地面を作成
     ground_geom = dCreatePlane(space, 0, 0, 1, 0);
 
-    // Create obstacles
+    // 障害物を作成
     createObstacles();
 
-    // Create robot at correct height (wheel radius + half body height)
+    // ロボットを作成（正しい高さ = 車輪半径 + 本体高さの半分）
     dReal robot_height = WHEEL_RADIUS + BODY_HEIGHT / 2;
     createRobot(0, 0, robot_height);
 
-    // Create LiDAR sensor
+    // LiDARセンサーを作成
+    //   -180度〜+180度、360本の光線、最大距離5m
     lidar = new LidarSensor(space, -M_PI, M_PI, 360, 5.0, 0.1);
 
-    // Create viewer
+    // ビューワーの作成
     Viewer viewer(argc, argv, "19: Robot with LiDAR - ODE Tutorial");
     viewer.setSimulationCallback(simulationStep);
     viewer.setDrawCallback(drawScene);
@@ -316,7 +390,7 @@ int main(int argc, char** argv) {
 
     viewer.start();
 
-    // Cleanup
+    // クリーンアップ
     delete lidar;
     delete diff_drive;
     for (auto& obs : obstacles) {
